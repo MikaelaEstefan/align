@@ -33,7 +33,8 @@ function buildItems(): Item[] {
   const entries = Object.entries(modules).map(([path, url]) => {
     // path ejemplo: ../assets/images/cozy/cozy-01.jpg
     const parts = path.split("/");
-    const style = parts[parts.length - 2] as Style; // carpeta = estilo
+    const rawStyle = parts[parts.length - 2];
+    const style = rawStyle.toLowerCase().trim() as Style; // carpeta = estilo
     const filename = parts[parts.length - 1]; // cozy-01.jpg
 
     const id = filename.replace(/\.(jpg|jpeg|png|webp)$/i, "");
