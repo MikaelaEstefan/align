@@ -12,7 +12,6 @@ export default function Swipe() {
   const next = useAlignStore((s) => s.next);
 
   const total = ITEMS.length;
-
   const current = useMemo(() => ITEMS[index], [index]);
 
   const handleVote = (value: "like" | "dislike" | "skip") => {
@@ -25,24 +24,16 @@ export default function Swipe() {
       navigate(`/rooms/${code}/results`);
       return;
     }
-
     next();
   };
 
-  if (!current) {
-    return (
-      <div style={{ padding: 24 }}>
-        <h2>Swipe</h2>
-        <p>No items found.</p>
-      </div>
-    );
-  }
+  if (!current) return <div style={{ padding: 24 }}>No items.</div>;
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 24, maxWidth: 460 }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <div>Room: {code}</div>
-        <div>
+        <div style={{ opacity: 0.7 }}>Room {code}</div>
+        <div style={{ opacity: 0.7 }}>
           {index + 1}/{total}
         </div>
       </div>
@@ -50,10 +41,16 @@ export default function Swipe() {
       <img
         src={current.src}
         alt={current.alt ?? ""}
-        style={{ width: "100%", maxWidth: 420, aspectRatio: "1/1", objectFit: "cover", borderRadius: 16 }}
+        style={{
+          width: "100%",
+          aspectRatio: "1/1",
+          objectFit: "cover",
+          borderRadius: 18,
+          border: "1px solid rgba(0,0,0,0.06)",
+        }}
       />
 
-      <div style={{ marginTop: 12, opacity: 0.7 }}>{current.style}</div>
+      <div style={{ marginTop: 10, opacity: 0.7 }}>{current.style}</div>
 
       <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
         <button onClick={() => handleVote("dislike")}>No</button>

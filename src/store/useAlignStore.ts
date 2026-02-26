@@ -4,7 +4,7 @@ export type VoteValue = "like" | "dislike" | "skip";
 
 type AlignState = {
   index: number;
-  votes: Record<string, VoteValue>; // itemId -> vote
+  votes: Record<string, VoteValue>;
   vote: (itemId: string, value: VoteValue) => void;
   next: () => void;
   reset: () => void;
@@ -19,14 +19,7 @@ export const useAlignStore = create<AlignState>((set) => ({
       votes: { ...state.votes, [itemId]: value },
     })),
 
-  next: () =>
-    set((state) => ({
-      index: state.index + 1,
-    })),
+  next: () => set((state) => ({ index: state.index + 1 })),
 
-  reset: () =>
-    set(() => ({
-      index: 0,
-      votes: {},
-    })),
+  reset: () => set(() => ({ index: 0, votes: {} })),
 }));
