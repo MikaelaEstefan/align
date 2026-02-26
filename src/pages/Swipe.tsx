@@ -8,8 +8,10 @@ export default function Swipe() {
   const navigate = useNavigate();
 
   const index = useAlignStore((s) => s.index);
+  const currentUser = useAlignStore((s) => s.currentUser);
   const vote = useAlignStore((s) => s.vote);
   const next = useAlignStore((s) => s.next);
+  const switchUser = useAlignStore((s) => s.switchUser);
 
   const total = ITEMS.length;
   const current = useMemo(() => ITEMS[index], [index]);
@@ -20,39 +22,42 @@ export default function Swipe() {
     vote(current.id, value);
 
     const isLast = index >= total - 1;
+
     if (isLast) {
-      navigate(`/rooms/${code}/results`);
-      return;
+      if (currentUser === "A") {
+        switchUser();
+        return;
+      } else {
+        navigate(`/rooms/${code}/results`);
+        return;
+      }
     }
+
     next();
   };
 
-  if (!current) return <div style={{ padding: 24 }}>No items.</div>;
+  if (!current) return <div style={{ padding: 24 }}>No items</div>;
 
   return (
     <div style={{ padding: 24, maxWidth: 460 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{ opacity: 0.7 }}>Room {code}</div>
-        <div style={{ opacity: 0.7 }}>
-          {index + 1}/{total}
-        </div>
+      <h2>User {currentUser}</h2>
+
+      <div style={{ opacity: 0.7 }}>
+        {index + 1}/{total}
       </div>
 
       <img
         src={current.src}
-        alt={current.alt ?? ""}
+        alt=""
         style={{
           width: "100%",
           aspectRatio: "1/1",
           objectFit: "cover",
           borderRadius: 18,
-          border: "1px solid rgba(0,0,0,0.06)",
         }}
       />
 
-      <div style={{ marginTop: 10, opacity: 0.7 }}>{current.style}</div>
-
-      <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+      <div style={{ marginTop: 12 }}>
         <button onClick={() => handleVote("dislike")}>No</button>
         <button onClick={() => handleVote("skip")}>Skip</button>
         <button onClick={() => handleVote("like")}>Like</button>
