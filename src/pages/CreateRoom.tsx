@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 function generateCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -12,41 +13,64 @@ function generateCode() {
 
 export default function CreateRoom() {
   const navigate = useNavigate();
-  const [roomName, setRoomName] = useState("");
-  const [code, setCode] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleCreate = () => {
-    const newCode = generateCode();
-    setCode(newCode);
-  };
+  const handleCreate = async () => {
+    setLoading(true);
 
-  const handleStart = () => {
-    if (code) {
-      navigate(`/rooms/${code}/waiting`);
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData.user;
+
+    if (!user) {
+      alert("Not authenticated");
+      return;
     }
+
+    const code = generateCode();
+
+    // 1️⃣ Crear room
+    const { data: room, error: roomError } = await supabase
+      .from("rooms")
+      .insert({
+        code,
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (roomError) {
+      console.error(roomError);
+      alert(roomError.message);
+      setLoading(false);
+      return;
+    }
+
+    // 2️⃣ Agregar miembro
+    const { error: memberError } = await supabase
+      .from("room_members")
+      .insert({
+        room_id: room.id,
+        user_id: user.id,
+      });
+
+    if (memberError) {
+      console.error(memberError);
+      alert(memberError.message);
+      setLoading(false);
+      return;
+    }
+
+    // 3️⃣ Redirigir
+    navigate(`/rooms/${code}/waiting`);
   };
 
   return (
     <div style={{ padding: 24 }}>
       <h2>Create Room</h2>
 
-      {!code ? (
-        <>
-          <input
-            placeholder="Room name (optional)"
-            value={roomName}
-            onChange={(e) => setRoomName(e.target.value)}
-          />
-          <br />
-          <button onClick={handleCreate}>Create</button>
-        </>
-      ) : (
-        <>
-          <p>Room Code:</p>
-          <h3>{code}</h3>
-          <button onClick={handleStart}>Go to Waiting</button>
-        </>
-      )}
+      <button onClick={handleCreate} disabled={loading}>
+        {loading ? "Creating..." : "Create Room"}
+      </button>
     </div>
   );
 }
