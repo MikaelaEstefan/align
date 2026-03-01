@@ -16,52 +16,54 @@ export default function CreateRoom() {
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
+    console.log("CLICK create room");
     setLoading(true);
 
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData.user;
+    try {
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+      console.log("getUser", { user: userData?.user, userErr });
 
-    if (!user) {
-      alert("Not authenticated");
-      return;
-    }
+      const user = userData.user;
 
-    const code = generateCode();
+      if (!user) {
+        alert("Not authenticated");
+        return;
+      }
 
-    // 1️⃣ Crear room
-    const { data: room, error: roomError } = await supabase
-      .from("rooms")
-      .insert({
-        code,
-        created_by: user.id,
-      })
-      .select()
-      .single();
+      const code = generateCode();
+      console.log("Generated code:", code);
 
-    if (roomError) {
-      console.error(roomError);
-      alert(roomError.message);
+      const { data: room, error: roomError } = await supabase
+        .from("rooms")
+        .insert({ code, created_by: user.id })
+        .select()
+        .single();
+
+      console.log("rooms insert result", { room, roomError });
+
+      if (roomError) {
+        alert(roomError.message);
+        return;
+      }
+
+      const { error: memberError } = await supabase
+        .from("room_members")
+        .insert({ room_id: room.id, user_id: user.id });
+
+      console.log("members insert result", { memberError });
+
+      if (memberError) {
+        alert(memberError.message);
+        return;
+      }
+
+      navigate(`/rooms/${code}/waiting`);
+    } catch (e) {
+      console.error("Create room unexpected error:", e);
+      alert("Unexpected error creating room. Check console.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // 2️⃣ Agregar miembro
-    const { error: memberError } = await supabase
-      .from("room_members")
-      .insert({
-        room_id: room.id,
-        user_id: user.id,
-      });
-
-    if (memberError) {
-      console.error(memberError);
-      alert(memberError.message);
-      setLoading(false);
-      return;
-    }
-
-    // 3️⃣ Redirigir
-    navigate(`/rooms/${code}/waiting`);
   };
 
   return (
