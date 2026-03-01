@@ -19,7 +19,7 @@ export default function SignIn() {
     const redirectTo = `${window.location.origin}/rooms`;
       import.meta.env.PROD
         ? window.location.origin // en Vercel/producción
-        : "http://localhost:5173"; // en local
+        : "http://localhost:5174"; // en local
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
