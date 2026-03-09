@@ -9,6 +9,7 @@ export default function Waiting() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [membersCount, setMembersCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const loadRoom = async () => {
@@ -35,12 +36,12 @@ export default function Waiting() {
     if (!roomId) return;
 
     const checkMembers = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("room_members")
         .select("user_id")
         .eq("room_id", roomId);
 
-      if (!error && data) {
+      if (data) {
         setMembersCount(data.length);
       }
     };
@@ -48,9 +49,19 @@ export default function Waiting() {
     checkMembers();
 
     const interval = setInterval(checkMembers, 2000);
-
     return () => clearInterval(interval);
   }, [roomId]);
+
+  const copyCode = async () => {
+    if (!code) return;
+
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
 
   if (loading) {
     return <div style={{ padding: 24 }}>Loading room...</div>;
@@ -59,18 +70,44 @@ export default function Waiting() {
   const ready = membersCount >= 2;
 
   return (
-    <div style={{ padding: 24, maxWidth: 460, margin: "0 auto" }}>
-      <h2>Room Status</h2>
+    <div style={{ padding: 24, maxWidth: 460, margin: "0 auto", textAlign: "center" }}>
+      <h2>Invite your partner</h2>
 
-      <p>Room code: <strong>{code}</strong></p>
+      <p style={{ opacity: 0.7 }}>
+        Share this code so they can join your room
+      </p>
 
-      {!ready && (
-        <p>Waiting for second person...</p>
-      )}
+      <div
+        style={{
+          fontSize: 28,
+          fontWeight: 600,
+          letterSpacing: 2,
+          margin: "16px 0",
+          padding: 12,
+          borderRadius: 12,
+          background: "#f3f3f3",
+        }}
+      >
+        {code}
+      </div>
 
-      {ready && (
-        <p>Partner joined! You can start swiping.</p>
-      )}
+      <button onClick={copyCode}>
+        {copied ? "Copied!" : "Copy code"}
+      </button>
+
+      <div style={{ marginTop: 24 }}>
+        {!ready && (
+          <p style={{ opacity: 0.7 }}>
+            Waiting for second person...
+          </p>
+        )}
+
+        {ready && (
+          <p style={{ fontWeight: 500 }}>
+            Partner joined! Ready to swipe.
+          </p>
+        )}
+      </div>
 
       <button
         onClick={() => navigate(`/rooms/${code}/swipe`)}
@@ -80,7 +117,7 @@ export default function Waiting() {
         Start Swiping
       </button>
 
-      <div style={{ marginTop: 10, opacity: 0.6 }}>
+      <div style={{ marginTop: 12, opacity: 0.6 }}>
         Members in room: {membersCount}
       </div>
     </div>
