@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import PageShell from "../components/PageShell";
+import Button from "../components/Button";
 
 export default function JoinRoom() {
   const navigate = useNavigate();
@@ -14,7 +16,6 @@ export default function JoinRoom() {
     setLoading(true);
 
     try {
-      // 1) user
       const { data: userData, error: userErr } = await supabase.auth.getUser();
       const user = userData.user;
 
@@ -23,25 +24,29 @@ export default function JoinRoom() {
         alert(userErr.message);
         return;
       }
+
       if (!user) {
         alert("Not authenticated");
         return;
       }
 
-      // 2) find room by code
       const { data: room, error: roomErr } = await supabase
         .from("rooms")
         .select("id, code")
         .eq("code", trimmed)
-        .single();
+        .maybeSingle();
 
-      if (roomErr || !room) {
+      if (roomErr) {
         console.error(roomErr);
+        alert(roomErr.message);
+        return;
+      }
+
+      if (!room) {
         alert("Room not found. Check the code and try again.");
         return;
       }
 
-      // 3) (optional) check if already member to avoid duplicate insert errors
       const { data: existing, error: existingErr } = await supabase
         .from("room_members")
         .select("room_id, user_id")
@@ -55,7 +60,6 @@ export default function JoinRoom() {
         return;
       }
 
-      // 4) insert membership if not exists
       if (!existing) {
         const { error: memberErr } = await supabase
           .from("room_members")
@@ -68,32 +72,38 @@ export default function JoinRoom() {
         }
       }
 
-      // 5) go to waiting
       navigate(`/rooms/${room.code}/waiting`);
     } catch (e) {
       console.error("Unexpected join room error:", e);
-      alert("Unexpected error joining room (check console).");
+      alert("Unexpected error joining room.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2>Join room</h2>
-
+    <PageShell
+      title="Join room"
+      subtitle="Enter the shared code to join an existing room."
+    >
       <input
-        placeholder="Enter room code (e.g. ALIGN-AB12CD)"
+        placeholder="Enter room code"
         value={code}
         onChange={(e) => setCode(e.target.value)}
-        style={{ width: "100%", maxWidth: 320 }}
+        style={{
+          width: "100%",
+          padding: "12px 14px",
+          borderRadius: 12,
+          border: "1px solid #d9d9d9",
+          fontSize: 14,
+          marginBottom: 14,
+          boxSizing: "border-box",
+        }}
       />
 
-      <br />
-
-      <button onClick={handleJoin} disabled={loading} style={{ marginTop: 12 }}>
-        {loading ? "Joining..." : "Join"}
-      </button>
-    </div>
+      <Button fullWidth onClick={handleJoin} disabled={loading}>
+        {loading ? "Joining..." : "Join Room"}
+      </Button>
+    </PageShell>
   );
 }

@@ -1,18 +1,22 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import PageShell from "../components/PageShell";
+import Button from "../components/Button";
 
 function generateCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let result = "";
-  for (let i = 0; i < 6; i++) result += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 6; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
   return `ALIGN-${result}`;
 }
 
 export default function CreateRoom() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [debug, setDebug] = useState<string>("");
+  const [debug, setDebug] = useState("");
 
   const handleCreate = async () => {
     setLoading(true);
@@ -20,19 +24,24 @@ export default function CreateRoom() {
 
     try {
       const { data: userData, error: userErr } = await supabase.auth.getUser();
-      setDebug((d) => d + `getUser error: ${userErr?.message ?? "none"}\n`);
-      setDebug((d) => d + `user: ${userData?.user?.id ?? "null"}\n`);
-
       const user = userData.user;
+
+      setDebug((d) => d + `getUser error: ${userErr?.message ?? "none"}\n`);
+      setDebug((d) => d + `user: ${user?.id ?? "null"}\n`);
+
+      if (userErr) {
+        alert(userErr.message);
+        return;
+      }
+
       if (!user) {
-        setDebug((d) => d + "NOT AUTHENTICATED\n");
+        alert("Not authenticated");
         return;
       }
 
       const code = generateCode();
       setDebug((d) => d + `code: ${code}\n`);
 
-      // ✅ IMPORTANT: no select() to avoid RLS select issues
       const { error: roomInsertErr } = await supabase
         .from("rooms")
         .insert({ code, created_by: user.id });
@@ -41,14 +50,14 @@ export default function CreateRoom() {
 
       if (roomInsertErr) return;
 
-      // Fetch room id by code
       const { data: room, error: roomFetchErr } = await supabase
         .from("rooms")
-        .select("id, code")
+        .select("id")
         .eq("code", code)
         .single();
 
       setDebug((d) => d + `rooms fetch error: ${roomFetchErr?.message ?? "none"}\n`);
+
       if (roomFetchErr || !room) return;
 
       const { error: memberErr } = await supabase
@@ -56,35 +65,46 @@ export default function CreateRoom() {
         .insert({ room_id: room.id, user_id: user.id });
 
       setDebug((d) => d + `members insert error: ${memberErr?.message ?? "none"}\n`);
+
       if (memberErr) return;
 
-      setDebug((d) => d + `NAVIGATE -> /rooms/${code}/waiting\n`);
+      await navigator.clipboard.writeText(code);
+      setDebug((d) => d + `copied code to clipboard\n`);
+
       navigate(`/rooms/${code}/waiting`);
+    } catch (e) {
+      console.error("Unexpected create room error:", e);
+      alert("Unexpected error creating room.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 560 }}>
-      <h2>Create Room</h2>
-
-      <button onClick={handleCreate} disabled={loading}>
+    <PageShell
+      title="Create room"
+      subtitle="Create a shared room and invite the second person with a code."
+    >
+      <Button fullWidth onClick={handleCreate} disabled={loading}>
         {loading ? "Creating..." : "Create Room"}
-      </button>
+      </Button>
 
-      <pre
-        style={{
-          marginTop: 16,
-          padding: 12,
-          background: "rgba(0,0,0,0.06)",
-          borderRadius: 10,
-          whiteSpace: "pre-wrap",
-          overflow: "auto",
-        }}
-      >
-        {debug}
-      </pre>
-    </div>
+      {debug && (
+        <pre
+          style={{
+            marginTop: 16,
+            padding: 12,
+            background: "rgba(0,0,0,0.05)",
+            borderRadius: 12,
+            whiteSpace: "pre-wrap",
+            overflow: "auto",
+            fontSize: 12,
+            lineHeight: 1.5,
+          }}
+        >
+          {debug}
+        </pre>
+      )}
+    </PageShell>
   );
 }
