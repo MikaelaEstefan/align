@@ -1,13 +1,17 @@
+import AppHeader from "./AppHeader";
+
 type PageShellProps = {
   title?: string;
   subtitle?: string;
   children: React.ReactNode;
+  showHeader?: boolean;
 };
 
 export default function PageShell({
   title,
   subtitle,
   children,
+  showHeader = true,
 }: PageShellProps) {
   return (
     <div
@@ -25,6 +29,8 @@ export default function PageShell({
           maxWidth: 460,
         }}
       >
+        {showHeader && <AppHeader />}
+
         {title && (
           <h1
             style={{
