@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ITEMS } from "../data/items";
 import { useAlignStore } from "../store/useAlignStore";
 import { supabase } from "../lib/supabase";
+import PageShell from "../components/PageShell";
+import Button from "../components/Button";
 
 type VoteRow = {
   item_id: string;
@@ -72,39 +74,58 @@ export default function Results() {
   }, [matchesIds]);
 
   if (loading) {
-    return <div style={{ padding: 24 }}>Loading matches...</div>;
+    return (
+      <PageShell title="Matches" subtitle="Loading results...">
+        <div />
+      </PageShell>
+    );
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 520, margin: "0 auto" }}>
-      <h2>Matches</h2>
-      <p>{matches.length} matches</p>
+    <PageShell
+      title="Matches"
+      subtitle={`${matches.length} shared ${matches.length === 1 ? "match" : "matches"}`}
+    >
+      {matches.length === 0 ? (
+        <div style={{ opacity: 0.7, marginBottom: 20 }}>
+          No shared likes yet.
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 10,
+          }}
+        >
+          {matches.map((item) => (
+            <img
+              key={item.id}
+              src={item.src}
+              alt={item.alt ?? ""}
+              style={{
+                width: "100%",
+                aspectRatio: "1 / 1",
+                objectFit: "cover",
+                borderRadius: 16,
+                display: "block",
+              }}
+            />
+          ))}
+        </div>
+      )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        {matches.map((item) => (
-          <img
-            key={item.id}
-            src={item.src}
-            alt={item.alt ?? ""}
-            style={{
-              width: "100%",
-              aspectRatio: "1/1",
-              objectFit: "cover",
-              borderRadius: 16,
-            }}
-          />
-        ))}
+      <div style={{ marginTop: 20 }}>
+        <Button
+          fullWidth
+          onClick={() => {
+            reset();
+            navigate(`/rooms/${code}/swipe`);
+          }}
+        >
+          Start again
+        </Button>
       </div>
-
-      <button
-        onClick={() => {
-          reset();
-          navigate(`/rooms/${code}/swipe`);
-        }}
-        style={{ marginTop: 20 }}
-      >
-        Start again
-      </button>
-    </div>
+    </PageShell>
   );
 }

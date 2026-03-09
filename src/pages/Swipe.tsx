@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ITEMS } from "../data/items";
 import { useAlignStore } from "../store/useAlignStore";
 import { supabase } from "../lib/supabase";
+import PageShell from "../components/PageShell";
+import Button from "../components/Button";
 
 type VoteValue = "like" | "dislike" | "skip";
 
@@ -96,20 +98,36 @@ export default function Swipe() {
   };
 
   if (loadingRoom) {
-    return <div style={{ padding: 24 }}>Loading room...</div>;
+    return (
+      <PageShell title="Swipe" subtitle="Loading room...">
+        <div />
+      </PageShell>
+    );
   }
 
   if (!current) {
-    return <div style={{ padding: 24 }}>No items</div>;
+    return (
+      <PageShell title="Swipe" subtitle="No items found.">
+        <div />
+      </PageShell>
+    );
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 460, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{ opacity: 0.7 }}>Room {code}</div>
-        <div style={{ opacity: 0.7 }}>
+    <PageShell title="Swipe" subtitle={`Room ${code}`}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 12,
+          fontSize: 14,
+          opacity: 0.7,
+        }}
+      >
+        <span>{current.style}</span>
+        <span>
           {index + 1}/{total}
-        </div>
+        </span>
       </div>
 
       <img
@@ -117,25 +135,47 @@ export default function Swipe() {
         alt={current.alt ?? ""}
         style={{
           width: "100%",
-          aspectRatio: "1/1",
+          aspectRatio: "1 / 1",
           objectFit: "cover",
-          borderRadius: 18,
+          borderRadius: 20,
+          display: "block",
         }}
       />
 
-      <div style={{ marginTop: 10, opacity: 0.7 }}>{current.style}</div>
-
-      <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-        <button onClick={() => handleVote("dislike")} disabled={savingVote}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gap: 10,
+          marginTop: 18,
+        }}
+      >
+        <Button
+          variant="secondary"
+          fullWidth
+          onClick={() => handleVote("dislike")}
+          disabled={savingVote}
+        >
           No
-        </button>
-        <button onClick={() => handleVote("skip")} disabled={savingVote}>
+        </Button>
+
+        <Button
+          variant="secondary"
+          fullWidth
+          onClick={() => handleVote("skip")}
+          disabled={savingVote}
+        >
           Skip
-        </button>
-        <button onClick={() => handleVote("like")} disabled={savingVote}>
+        </Button>
+
+        <Button
+          fullWidth
+          onClick={() => handleVote("like")}
+          disabled={savingVote}
+        >
           Like
-        </button>
+        </Button>
       </div>
-    </div>
+    </PageShell>
   );
 }
